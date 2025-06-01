@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقرير اليومي - {{ report_date|date:"Y-m-d" }}</title>
+    <style>
+        @font-face {
+            font-family: 'Cairo';
+            src: url('/static/fonts/Cairo-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'Cairo', 'Arial', sans-serif;
+            direction: rtl;
+            background-color: white;
+            color: black;
+            margin: 0;
+            padding: 0;
+            font-size: 16px; /* حجم خط أكبر للوضوح */
+            line-height: 1.5;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px; /* زيادة padding لاستغلال المساحة */
+            min-height: 100vh; /* استغلال كامل ارتفاع الصفحة */
+            box-sizing: border-box;
+        }
+
+        .print-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .print-header h2 {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .print-section {
+            margin-bottom: 25px; /* زيادة المساحة بين الأقسام */
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 10px; /* إضافة padding للأقسام */
+            /* Eliminamos page-break-inside: avoid para permitir que las secciones se dividan entre páginas si es necesario */
+        }
+
+        .print-section-title {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            margin-bottom: 0;
+            text-align: center;
+            border-bottom: 2px solid #2980b9;
+            font-size: 16px; /* حجم خط أكبر لعناوين الأقسام */
+        }
+
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px; /* زيادة المساحة تحت الجداول */
+            table-layout: fixed;
+        }
+
+        .print-table th {
+            background-color: #34495e;
+            color: white;
+            padding: 10px 6px; /* زيادة padding للعناوين */
+            text-align: center;
+            border: 1px solid #2c3e50;
+            font-size: 14px; /* حجم خط أكبر للعناوين */
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .print-table td {
+            padding: 8px 6px; /* زيادة padding للبيانات */
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 13px; /* حجم خط أكبر للبيانات */
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .print-table tr:nth-child(even) {
+            background-color: #ecf0f1;
+        }
+
+        .print-table tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .print-table tr:hover {
+            background-color: #e8f4fc;
+        }
+
+        .print-footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 10px;
+            color: #555;
+            border-top: 2px solid #3498db;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 10px;
+            color: #7f8c8d;
+            font-style: italic;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin: 8px 0;
+            border-left: 4px solid #3498db;
+            font-size: 11px;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .summary-boxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .summary-box {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            width: 48%;
+            box-sizing: border-box;
+        }
+
+        .summary-box h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 12px;
+        }
+
+        .summary-box p {
+            margin: 3px 0;
+            font-size: 11px;
+        }
+
+        .summary-box .count {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a76c9;
+        }
+
+        .summary-box .label {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .print-controls {
+            margin-bottom: 20px;
+        }
+
+        /* تنسيق توزيع الدفعات */
+        .distribution-group {
+            margin-bottom: 10px;
+        }
+
+        .distribution-header {
+            background-color: #f8f9fa;
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-align: right;
+        }
+
+        .distribution-notes {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+            padding: 3px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .distribution-separator {
+            border-top: 1px dashed #ccc;
+            margin: 8px 0;
+        }
+
+        .total-row {
+            background-color: #e8f4fc !important;
+            font-weight: bold;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+
+        @media print {
+            .print-controls {
+                display: none !important;
+            }
+
+            body {
+                font-size: 10px;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-header, .print-section-title, .print-table th {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .print-table tr:nth-child(even), .print-table tr:nth-child(odd) {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .print-table th {
+                padding: 4px 2px;
+                font-size: 10px;
+            }
+
+            .print-table td {
+                padding: 3px 2px;
+                font-size: 9px;
+            }
+
+            .print-section-title {
+                font-size: 12px;
+                padding: 6px;
+            }
+
+            .print-header h2 {
+                font-size: 16px;
+            }
+
+            /* Eliminamos el salto de página */
+            .page-break {
+                display: none;
+            }
+
+            /* Reducimos el espacio entre secciones */
+            .print-section {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="print-controls no-print">
+        <button onclick="window.print()" style="background-color: #2ecc71; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin-right: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 5px;">&#128424;</span> طباعة التقرير
+        </button>
+        <button onclick="exportToPDF()" style="background-color: #e74c3c; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin-right: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <span style="margin-left: 5px;">&#128196;</span> تصدير PDF
+        </button>
+        <a href="/hatchery/reports/daily/?date={{ report_date|date:'Y-m-d' }}" style="background-color: #3498db; color: white; border: none; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: inline-block;">
+            <span style="margin-left: 5px;">&#8592;</span> العودة
+        </a>
+    </div>
+
+    <div class="print-header">
+        <h2 style="margin: 0; font-size: 24px;">
+            <span style="margin-left: 10px;">&#128202;</span>
+            التقرير اليومي - {{ report_date|date:"Y-m-d" }}
+        </h2>
+    </div>
+
+    <!-- تم إزالة ملخص الإحصائيات بناءً على طلب المستخدم -->
+
+    <!-- الدفعات الواردة -->
+    {% if today_entries or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">الدفعات الواردة المسجلة اليوم</div>
+        {% if today_entries %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>اسم الدفعة</th>
+                    <th>تاريخ الدخول</th>
+                    <th>الكمية</th>
+                    <th>السائق</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in today_entries %}
+                <tr>
+                    <td>{{ entry.batch_name.name }}</td>
+                    <td>{{ entry.date|date:"Y-m-d" }}</td>
+                    <td>{{ entry.quantity }}</td>
+                    <td>{{ entry.driver|default:"-" }}</td>
+                    <td>{{ entry.notes|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد دفعات واردة مسجلة اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- الدفعات المسكنة -->
+    {% if today_incubations or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">الدفعات التي تم تسكينها اليوم</div>
+        {% if today_incubations %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>اسم الدفعة</th>
+                    <th>تاريخ التسكين</th>
+                    <th>الكمية</th>
+                    <th>الفاقد</th>
+                    <th>تاريخ الخروج المتوقع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for incubation in today_incubations %}
+                <tr>
+                    <td>{{ incubation.batch_entry.batch_name.name }}</td>
+                    <td>{{ incubation.incubation_date|date:"Y-m-d" }}</td>
+                    <td>{{ incubation.incubation_quantity }}</td>
+                    <td>{{ incubation.damaged_quantity }}</td>
+                    <td>{{ incubation.expected_hatch_date|date:"Y-m-d" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد دفعات تم تسكينها اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- الدفعات الخارجة -->
+    {% if today_hatchings or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">الدفعات التي خرجت اليوم</div>
+        {% if today_hatchings %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>اسم الدفعة</th>
+                    <th>تاريخ الوارد</th>
+                    <th>تاريخ الخروج</th>
+                    <th>الكتاكيت</th>
+                    <th>الفرزة</th>
+                    <th>الفاطس</th>
+                    <th>المعدم</th>
+                    <th>نسبة الإخصاب</th>
+                    <th>نسبة الفقس</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hatching in today_hatchings %}
+                <tr>
+                    <td>{{ hatching.incubation.batch_entry.batch_name.name }}</td>
+                    <td>{{ hatching.incubation.batch_entry.date|date:"Y-m-d" }}</td>
+                    <td>{{ hatching.hatch_date|date:"Y-m-d" }}</td>
+                    <td>{{ hatching.chicks_count }}</td>
+                    <td>{{ hatching.culled_count }}</td>
+                    <td>{{ hatching.dead_count }}</td>
+                    <td>{{ hatching.wasted_count }}</td>
+                    <td>{{ hatching.fertility_rate }}%</td>
+                    <td>{{ hatching.hatch_rate }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد دفعات خرجت اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- توزيعات الدفعات -->
+    {% if today_distributions or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">توزيعات الدفعات اليوم</div>
+        {% if today_distributions %}
+            {% for distribution in today_distributions %}
+            <div class="distribution-group">
+                <div class="distribution-header">
+                    {% if distribution.is_merged %}
+                        <strong>توزيع مدمج:</strong> {{ distribution.batch_names_display }} |
+                    {% else %}
+                        <strong>اسم الدفعة:</strong> {{ distribution.hatching.incubation.batch_entry.batch_name.name }} |
+                    {% endif %}
+                    <strong>تاريخ التوزيع:</strong> {{ distribution.distribution_date|date:"Y-m-d" }} |
+                    <strong>إجمالي الكتاكيت:</strong> {{ distribution.total_distributed_count }} |
+                    <strong>إجمالي المبلغ:</strong> {{ distribution.total_paid_amount }}
+                </div>
+
+                <!-- تفاصيل التوزيع -->
+                {% if distribution.distribution_items.exists %}
+                <div class="distribution-details">
+                    <table class="print-table" style="margin-top: 10px; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th>العميل</th>
+                                <th>عدد الكتاكيت</th>
+                                <th>اسم السائق</th>
+                                <th>المبلغ المدفوع</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in distribution.distribution_items.all %}
+                            <tr>
+                                <td>{{ item.customer.name }}</td>
+                                <td>{{ item.chicks_count }}</td>
+                                <td>{{ item.driver|default:"-" }}</td>
+                                <td>{{ item.paid_amount }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if show_distribution_notes %}
+                <div class="distribution-notes">
+                    <strong>ملاحظات:</strong> {{ distribution.notes|default:"-" }}
+                </div>
+                {% endif %}
+            </div>
+            {% if not forloop.last %}<div class="distribution-separator"></div>{% endif %}
+            {% endfor %}
+        {% else %}
+        <div class="empty-message">لا توجد توزيعات دفعات اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- المطهرات الواردة -->
+    {% if today_received_disinfectants or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">المطهرات الواردة اليوم</div>
+        {% if today_received_disinfectants %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>المطهر</th>
+                    <th>التصنيف</th>
+                    <th>الكمية</th>
+                    <th>وحدة القياس</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in today_received_disinfectants %}
+                <tr>
+                    <td>{{ transaction.disinfectant.name }}</td>
+                    <td>{{ transaction.disinfectant.category.name }}</td>
+                    <td>{{ transaction.quantity }}</td>
+                    <td>{{ transaction.disinfectant.unit }}</td>
+                    <td>{{ transaction.notes|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد مطهرات واردة اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- المطهرات المنصرفة -->
+    {% if today_dispensed_disinfectants or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">المطهرات المنصرفة اليوم</div>
+        {% if today_dispensed_disinfectants %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>المطهر</th>
+                    <th>التصنيف</th>
+                    <th>الكمية</th>
+                    <th>وحدة القياس</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in today_dispensed_disinfectants %}
+                <tr>
+                    <td>{{ transaction.disinfectant.name }}</td>
+                    <td>{{ transaction.disinfectant.category.name }}</td>
+                    <td>{{ transaction.quantity }}</td>
+                    <td>{{ transaction.disinfectant.unit }}</td>
+                    <td>{{ transaction.notes|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد مطهرات منصرفة اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- مبيعات الكتاكيت الفرزة -->
+    {% if today_culled_sales or not hide_empty_sections %}
+    <div class="print-section">
+        <div class="print-section-title">مبيعات الكتاكيت الفرزة اليوم</div>
+        {% if today_culled_sales %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>العميل</th>
+                    <th>الدفعة</th>
+                    <th>الكمية</th>
+                    {% if show_price_in_culled_sales %}
+                    <th>السعر</th>
+                    <th>الإجمالي</th>
+                    {% endif %}
+                    <th>المدفوع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in today_culled_sales %}
+                <tr>
+                    <td>{{ sale.customer.name }}</td>
+                    <td>{{ sale.hatching.incubation.batch_entry.batch_name.name }}</td>
+                    <td>{{ sale.quantity }}</td>
+                    {% if show_price_in_culled_sales %}
+                    <td>{{ sale.price_per_unit }}</td>
+                    <td>{{ sale.total_amount }}</td>
+                    {% endif %}
+                    <td>{{ sale.paid_amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <th colspan="2">الإجمالي</th>
+                    <th>{{ total_culled_sales_count }}</th>
+                    {% if show_price_in_culled_sales %}
+                    <th>-</th>
+                    <th>{{ total_culled_sales_amount }}</th>
+                    {% endif %}
+                    <th>{{ total_culled_sales_paid }}</th>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <div class="empty-message">لا توجد مبيعات كتاكيت فرزة اليوم</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+</div>
+
+<script>
+    // سنقوم بتحميل المكتبات بطريقة أفضل بدلاً من استخدام document.write
+    function loadScript(url, callback) {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+        script.onload = callback;
+        document.head.appendChild(script);
+    }
+
+    // تحميل المكتبات بالتتابع
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function() {
+            // بعد تحميل المكتبات، نتحقق من وجود معلمة auto_download_pdf
+            // التحقق من إعداد إخفاء الأقسام الفارغة
+            const hideEmptySections = getUrlParameter('hide_empty_sections') === '1';
+
+            if (getUrlParameter('auto_download_pdf') === '1') {
+                setTimeout(function() {
+                    exportToPDF();
+                }, 1500); // زيادة التأخير للتأكد من تحميل المكتبات بالكامل
+            }
+        });
+    });
+
+    // التحقق من وجود معلمة auto_download_pdf في عنوان URL
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    // وظيفة تصدير التقرير إلى PDF
+    function exportToPDF() {
+        // إظهار رسالة تحميل
+        const loadingMessage = document.createElement('div');
+        loadingMessage.style.position = 'fixed';
+        loadingMessage.style.top = '0';
+        loadingMessage.style.left = '0';
+        loadingMessage.style.width = '100%';
+        loadingMessage.style.height = '100%';
+        loadingMessage.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        loadingMessage.style.display = 'flex';
+        loadingMessage.style.justifyContent = 'center';
+        loadingMessage.style.alignItems = 'center';
+        loadingMessage.style.zIndex = '9999';
+        loadingMessage.style.color = 'white';
+        loadingMessage.style.fontSize = '24px';
+        loadingMessage.style.fontWeight = 'bold';
+        loadingMessage.innerHTML = 'جاري تحويل التقرير إلى PDF...';
+        document.body.appendChild(loadingMessage);
+
+        // إخفاء أزرار التحكم قبل التصدير
+        const controls = document.querySelector('.print-controls');
+        const originalDisplayStyle = controls.style.display;
+        controls.style.display = 'none';
+
+        // الحصول على عنصر المحتوى الذي نريد تحويله إلى PDF
+        const content = document.querySelector('.container');
+
+        // تحويل المحتوى إلى صورة
+        html2canvas(content, {
+            scale: 1.5, // تقليل scale لتقليل حجم الملف مع الحفاظ على الجودة
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: content.scrollWidth,
+            height: content.scrollHeight,
+            scrollX: 0,
+            scrollY: 0,
+            removeContainer: true, // تحسين الأداء
+            foreignObjectRendering: false // تحسين التوافق
+        }).then(function(canvas) {
+            try {
+                // إعادة إظهار أزرار التحكم
+                controls.style.display = originalDisplayStyle;
+
+                // إنشاء ملف PDF
+                const { jsPDF } = window.jspdf;
+
+                // استخدام اتجاه رأسي (portrait) للصفحة A4 مع ضغط
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true, // تفعيل الضغط
+                    putOnlyUsedFonts: true // استخدام الخطوط المستخدمة فقط
+                });
+
+                // حساب أبعاد الصفحة
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                // هوامش أصغر لاستغلال المساحة بشكل أفضل
+                const margin = 5;
+                const availableWidth = pageWidth - (margin * 2);
+                const availableHeight = pageHeight - (margin * 2);
+
+                // حساب نسبة التحجيم للحصول على أفضل جودة
+                const canvasAspectRatio = canvas.width / canvas.height;
+                const pageAspectRatio = availableWidth / availableHeight;
+
+                let imgWidth, imgHeight;
+
+                if (canvasAspectRatio > pageAspectRatio) {
+                    // العرض هو المحدد
+                    imgWidth = availableWidth;
+                    imgHeight = availableWidth / canvasAspectRatio;
+                } else {
+                    // الارتفاع هو المحدد
+                    imgHeight = availableHeight;
+                    imgWidth = availableHeight * canvasAspectRatio;
+                }
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.85); // استخدام JPEG بجودة 85% لتقليل الحجم
+
+                let heightLeft = imgHeight;
+                let position = margin;
+
+                // إضافة الصفحة الأولى
+                pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+                heightLeft -= availableHeight;
+
+                // إضافة صفحات إضافية إذا كان التقرير طويلاً
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+                    heightLeft -= availableHeight;
+                }
+
+                // لا نضيف أرقام صفحات للصفحة الأولى
+
+                // تنزيل الملف
+                pdf.save(`تقرير_المعمل_{{ report_date|date:"Y-m-d" }}.pdf`);
+
+                // إزالة رسالة التحميل
+                document.body.removeChild(loadingMessage);
+            } catch (error) {
+                console.error('حدث خطأ أثناء إنشاء ملف PDF:', error);
+                alert('حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.');
+
+                // إعادة إظهار أزرار التحكم
+                controls.style.display = originalDisplayStyle;
+
+                // إزالة رسالة التحميل
+                document.body.removeChild(loadingMessage);
+            }
+        }).catch(function(error) {
+            console.error('حدث خطأ أثناء تحويل الصفحة إلى صورة:', error);
+            alert('حدث خطأ أثناء تحويل الصفحة إلى صورة. يرجى المحاولة مرة أخرى.');
+
+            // إعادة إظهار أزرار التحكم
+            controls.style.display = originalDisplayStyle;
+
+            // إزالة رسالة التحميل
+            document.body.removeChild(loadingMessage);
+        });
+    }
+</script>
+</body>
+</html>

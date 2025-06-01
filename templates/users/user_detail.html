@@ -1,0 +1,319 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #dee2e6;
+    }
+    .info-card {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    .info-value {
+        color: #6c757d;
+    }
+    .status-badge {
+        font-size: 0.9em;
+        padding: 0.4em 0.8em;
+    }
+    .role-badge {
+        font-size: 0.9em;
+        padding: 0.4em 0.8em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user"></i> {{ title }}
+                    </h3>
+                    <div>
+                        {% if request.user.profile.role == 'admin' %}
+                        <a href="{% url 'user_edit' view_user.id %}" class="btn btn-warning me-2">
+                            <i class="fas fa-edit"></i> تعديل
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i> العودة للقائمة
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <!-- User Avatar and Basic Info -->
+                        <div class="col-md-4">
+                            <div class="info-card text-center">
+                                {% if view_user.profile.avatar %}
+                                    <img src="{{ view_user.profile.avatar.url }}" alt="Avatar" class="user-avatar-large mb-3">
+                                {% else %}
+                                    <div class="user-avatar-large mx-auto mb-3 bg-secondary d-flex align-items-center justify-content-center text-white">
+                                        <i class="fas fa-user fa-3x"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <h4 class="mb-2">{{ view_user.username }}</h4>
+                                {% if view_user.get_full_name %}
+                                    <p class="text-muted mb-3">{{ view_user.get_full_name }}</p>
+                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    <span class="badge role-badge 
+                                        {% if view_user.profile.role == 'admin' %}bg-danger
+                                        {% elif view_user.profile.role == 'manager' %}bg-warning
+                                        {% elif view_user.profile.role == 'employee' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ view_user.profile.get_role_display }}
+                                    </span>
+                                </div>
+                                
+                                <div>
+                                    <span class="badge status-badge {% if view_user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if view_user.is_active %}حساب نشط{% else %}حساب معطل{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Information -->
+                        <div class="col-md-8">
+                            <!-- Account Information -->
+                            <div class="info-card">
+                                <h5 class="mb-3"><i class="fas fa-user-circle"></i> معلومات الحساب</h5>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">اسم المستخدم:</span>
+                                    <span class="info-value">{{ view_user.username }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">البريد الإلكتروني:</span>
+                                    <span class="info-value">{{ view_user.email|default:"غير محدد" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">الاسم الأول:</span>
+                                    <span class="info-value">{{ view_user.first_name|default:"غير محدد" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">اسم العائلة:</span>
+                                    <span class="info-value">{{ view_user.last_name|default:"غير محدد" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">تاريخ التسجيل:</span>
+                                    <span class="info-value">{{ view_user.date_joined|date:"Y-m-d H:i" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">آخر تسجيل دخول:</span>
+                                    <span class="info-value">{{ view_user.last_login|date:"Y-m-d H:i"|default:"لم يسجل دخول بعد" }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Profile Information -->
+                            <div class="info-card">
+                                <h5 class="mb-3"><i class="fas fa-id-card"></i> معلومات الملف الشخصي</h5>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">رقم الهاتف:</span>
+                                    <span class="info-value">{{ view_user.profile.phone|default:"غير محدد" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">العنوان:</span>
+                                    <span class="info-value">{{ view_user.profile.address|default:"غير محدد" }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">إشعارات البريد الإلكتروني:</span>
+                                    <span class="info-value">
+                                        {% if view_user.profile.email_notifications %}
+                                            <i class="fas fa-check text-success"></i> مفعلة
+                                        {% else %}
+                                            <i class="fas fa-times text-danger"></i> معطلة
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">إشعارات المتصفح:</span>
+                                    <span class="info-value">
+                                        {% if view_user.profile.browser_notifications %}
+                                            <i class="fas fa-check text-success"></i> مفعلة
+                                        {% else %}
+                                            <i class="fas fa-times text-danger"></i> معطلة
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Permissions Information -->
+                            {% if request.user.profile.role == 'admin' %}
+                            <div class="info-card">
+                                <h5 class="mb-3"><i class="fas fa-shield-alt"></i> معلومات الصلاحيات</h5>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">الدور:</span>
+                                    <span class="info-value">{{ view_user.profile.get_role_display }}</span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">مدير نظام:</span>
+                                    <span class="info-value">
+                                        {% if view_user.is_superuser %}
+                                            <i class="fas fa-check text-success"></i> نعم
+                                        {% else %}
+                                            <i class="fas fa-times text-danger"></i> لا
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <span class="info-label">صلاحية الوصول للوحة الإدارة:</span>
+                                    <span class="info-value">
+                                        {% if view_user.is_staff %}
+                                            <i class="fas fa-check text-success"></i> نعم
+                                        {% else %}
+                                            <i class="fas fa-times text-danger"></i> لا
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    {% if request.user.profile.role == 'admin' and view_user != request.user %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center gap-3">
+                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changeRoleModal">
+                                    <i class="fas fa-user-tag"></i> تغيير الدور
+                                </button>
+                                
+                                <button type="button" class="btn btn-info toggle-status-btn" data-user-id="{{ view_user.id }}">
+                                    <i class="fas fa-power-off"></i> 
+                                    {% if view_user.is_active %}تعطيل الحساب{% else %}تفعيل الحساب{% endif %}
+                                </button>
+                                
+                                <a href="{% url 'user_delete' view_user.id %}" class="btn btn-danger" 
+                                   onclick="return confirm('هل أنت متأكد من حذف هذا المستخدم؟')">
+                                    <i class="fas fa-trash"></i> حذف المستخدم
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change Role Modal -->
+                    <div class="modal fade" id="changeRoleModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">تغيير دور المستخدم</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="changeRoleForm">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="newRole" class="form-label">الدور الجديد:</label>
+                                            <select class="form-select" id="newRole" name="role">
+                                                {% for role_key, role_name in role_choices %}
+                                                <option value="{{ role_key }}" {% if view_user.profile.role == role_key %}selected{% endif %}>
+                                                    {{ role_name }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                    <button type="button" class="btn btn-primary" id="saveRoleBtn">حفظ التغييرات</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle role change
+    $('#saveRoleBtn').click(function() {
+        const newRole = $('#newRole').val();
+        
+        $.post('{% url "change_user_role" view_user.id %}', {
+            'role': newRole,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .fail(function() {
+            alert('حدث خطأ أثناء تغيير الدور');
+        });
+    });
+
+    // Handle status toggle
+    $('.toggle-status-btn').click(function() {
+        const userId = $(this).data('user-id');
+        
+        $.post('{% url "toggle_user_status" view_user.id %}', {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .fail(function() {
+            alert('حدث خطأ أثناء تغيير حالة المستخدم');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .form-section h5 {
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #dee2e6;
+    }
+    .role-info {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user-plus"></i> {{ title }}
+                    </h3>
+                    <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> العودة للقائمة
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-user"></i> المعلومات الأساسية</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.username.id_for_label }}" class="form-label">اسم المستخدم *</label>
+                                        {{ user_form.username }}
+                                        {% if user_form.username.errors %}
+                                            <div class="text-danger">{{ user_form.username.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.email.id_for_label }}" class="form-label">البريد الإلكتروني *</label>
+                                        {{ user_form.email }}
+                                        {% if user_form.email.errors %}
+                                            <div class="text-danger">{{ user_form.email.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">الاسم الأول</label>
+                                        {{ user_form.first_name }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">اسم العائلة</label>
+                                        {{ user_form.last_name }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if not edit_user %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.password1.id_for_label }}" class="form-label">كلمة المرور *</label>
+                                        {{ user_form.password1 }}
+                                        {% if user_form.password1.errors %}
+                                            <div class="text-danger">{{ user_form.password1.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ user_form.password2.id_for_label }}" class="form-label">تأكيد كلمة المرور *</label>
+                                        {{ user_form.password2 }}
+                                        {% if user_form.password2.errors %}
+                                            <div class="text-danger">{{ user_form.password2.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Profile Information Section -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-id-card"></i> معلومات الملف الشخصي</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ profile_form.phone.id_for_label }}" class="form-label">رقم الهاتف</label>
+                                        {{ profile_form.phone }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="role" class="form-label">الدور *</label>
+                                        <select name="role" id="role" class="form-select" required>
+                                            {% for role_key, role_name in role_choices %}
+                                            <option value="{{ role_key }}" 
+                                                {% if edit_user and edit_user.profile.role == role_key %}selected
+                                                {% elif not edit_user and role_key == 'employee' %}selected{% endif %}>
+                                                {{ role_name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="role-info">
+                                            <small id="role-description">اختر الدور المناسب للمستخدم</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ profile_form.address.id_for_label }}" class="form-label">العنوان</label>
+                                        {{ profile_form.address }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ profile_form.avatar.id_for_label }}" class="form-label">الصورة الشخصية</label>
+                                        {{ profile_form.avatar }}
+                                        {% if edit_user and edit_user.profile.avatar %}
+                                        <div class="mt-2">
+                                            <img src="{{ edit_user.profile.avatar.url }}" alt="Current Avatar" class="avatar-preview">
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if edit_user %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" 
+                                                   {% if edit_user.is_active %}checked{% endif %}>
+                                            <label class="form-check-label" for="is_active">
+                                                حساب نشط
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">إلغاء التحديد سيمنع المستخدم من تسجيل الدخول</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if edit_user %}تحديث المستخدم{% else %}إنشاء المستخدم{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add Bootstrap classes to form fields
+    $('input[type="text"], input[type="email"], input[type="password"], textarea, select').addClass('form-control');
+    $('input[type="file"]').addClass('form-control');
+    
+    // Role descriptions
+    const roleDescriptions = {
+        'admin': 'صلاحيات كاملة لإدارة النظام والمستخدمين',
+        'manager': 'صلاحيات إدارية محدودة للعمليات اليومية',
+        'employee': 'صلاحيات أساسية للعمل اليومي',
+        'viewer': 'صلاحيات عرض فقط بدون تعديل'
+    };
+    
+    // Update role description on change
+    $('#role').change(function() {
+        const selectedRole = $(this).val();
+        const description = roleDescriptions[selectedRole] || 'اختر الدور المناسب للمستخدم';
+        $('#role-description').text(description);
+    });
+    
+    // Trigger initial description
+    $('#role').trigger('change');
+});
+</script>
+{% endblock %}

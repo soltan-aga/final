@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إدارة المستخدمين | نظام إدارة المخازن والمحاسبة{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .role-badge {
+        font-size: 0.8em;
+        padding: 0.3em 0.6em;
+    }
+    .status-toggle {
+        cursor: pointer;
+    }
+    .search-filters {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">إدارة المستخدمين</h4>
+                {% if request.user.profile.role == 'admin' %}
+                <a href="{% url 'user_create' %}" class="btn btn-light">
+                    <i class="fas fa-plus"></i> إضافة مستخدم جديد
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <!-- Search and Filters -->
+                <div class="search-filters">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">البحث</label>
+                            <input type="text" class="form-control" id="search" name="search"
+                                   value="{{ search_query }}" placeholder="اسم المستخدم، الاسم، البريد الإلكتروني...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="role" class="form-label">الدور</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="">جميع الأدوار</option>
+                                {% for role_key, role_name in role_choices %}
+                                <option value="{{ role_key }}" {% if role_filter == role_key %}selected{% endif %}>
+                                    {{ role_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">الحالة</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">جميع الحالات</option>
+                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>نشط</option>
+                                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>غير نشط</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-search"></i> بحث
+                            </button>
+                            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> مسح
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>المستخدم</th>
+                                <th>معلومات الاتصال</th>
+                                <th>الدور</th>
+                                <th>تاريخ التسجيل</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if user.profile.avatar %}
+                                            <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="user-avatar me-3">
+                                        {% else %}
+                                            <div class="user-avatar me-3 bg-secondary d-flex align-items-center justify-content-center text-white">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ user.username }}</strong>
+                                            {% if user.get_full_name %}
+                                                <br><small class="text-muted">{{ user.get_full_name }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if user.email %}
+                                        <i class="fas fa-envelope text-muted"></i> {{ user.email }}<br>
+                                    {% endif %}
+                                    {% if user.profile.phone %}
+                                        <i class="fas fa-phone text-muted"></i> {{ user.profile.phone }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.user.profile.role == 'admin' %}
+                                    <select class="form-select form-select-sm role-select" data-user-id="{{ user.id }}">
+                                        {% for role_key, role_name in role_choices %}
+                                        <option value="{{ role_key }}" {% if user.profile.role == role_key %}selected{% endif %}>
+                                            {{ role_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% else %}
+                                    <span class="badge role-badge
+                                        {% if user.profile.role == 'admin' %}bg-danger
+                                        {% elif user.profile.role == 'manager' %}bg-warning
+                                        {% elif user.profile.role == 'employee' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ user.profile.get_role_display_name }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ user.date_joined|date:"Y-m-d" }}</small><br>
+                                    <small class="text-muted">{{ user.date_joined|date:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    {% if request.user.profile.role == 'admin' and user != request.user %}
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input status-toggle" type="checkbox"
+                                               data-user-id="{{ user.id }}" {% if user.is_active %}checked{% endif %}>
+                                        <label class="form-check-label">
+                                            <span class="status-text">{% if user.is_active %}نشط{% else %}معطل{% endif %}</span>
+                                        </label>
+                                    </div>
+                                    {% else %}
+                                    <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if user.is_active %}نشط{% else %}معطل{% endif %}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'user_detail' user.id %}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if request.user.profile.role == 'admin' %}
+                                        <a href="{% url 'user_edit' user.id %}" class="btn btn-sm btn-outline-warning" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if user != request.user %}
+                                        <a href="{% url 'user_delete' user.id %}" class="btn btn-sm btn-outline-danger"
+                                           title="حذف" onclick="return confirm('هل أنت متأكد من حذف هذا المستخدم؟')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">لا توجد مستخدمين مطابقين للبحث</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle role change
+    $('.role-select').change(function() {
+        const userId = $(this).data('user-id');
+        const newRole = $(this).val();
+
+        $.post('{% url "change_user_role" 0 %}'.replace('0', userId), {
+            'role': newRole,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.success) {
+                showAlert('success', data.message);
+            } else {
+                showAlert('danger', data.message);
+            }
+        })
+        .fail(function() {
+            showAlert('danger', 'حدث خطأ أثناء تغيير الدور');
+        });
+    });
+
+    // Handle status toggle
+    $('.status-toggle').change(function() {
+        const userId = $(this).data('user-id');
+        const statusText = $(this).closest('td').find('.status-text');
+        const checkbox = $(this);
+
+        $.post('{% url "toggle_user_status" 0 %}'.replace('0', userId), {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        })
+        .done(function(data) {
+            if (data.success) {
+                statusText.text(data.is_active ? 'نشط' : 'معطل');
+                showAlert('success', data.message);
+            } else {
+                showAlert('danger', data.message);
+                // Revert the toggle
+                checkbox.prop('checked', !checkbox.prop('checked'));
+            }
+        })
+        .fail(function() {
+            showAlert('danger', 'حدث خطأ أثناء تغيير حالة المستخدم');
+            // Revert the toggle
+            checkbox.prop('checked', !checkbox.prop('checked'));
+        });
+    });
+
+    function showAlert(type, message) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('.card-body').prepend(alertHtml);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .user-info {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #dee2e6;
+    }
+    .danger-zone {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> {{ title }}
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <!-- Warning Message -->
+                    <div class="delete-warning">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+                            <div>
+                                <h5 class="mb-1">تحذير: عملية حذف غير قابلة للاسترداد</h5>
+                                <p class="mb-0">سيتم حذف جميع البيانات المرتبطة بهذا المستخدم نهائياً ولن يمكن استردادها.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Information -->
+                    <div class="user-info">
+                        <h5 class="mb-3"><i class="fas fa-user"></i> معلومات المستخدم المراد حذفه</h5>
+                        
+                        <div class="row align-items-center">
+                            <div class="col-md-3 text-center">
+                                {% if delete_user.profile.avatar %}
+                                    <img src="{{ delete_user.profile.avatar.url }}" alt="Avatar" class="user-avatar">
+                                {% else %}
+                                    <div class="user-avatar mx-auto bg-secondary d-flex align-items-center justify-content-center text-white">
+                                        <i class="fas fa-user fa-2x"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-9">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>اسم المستخدم:</strong></td>
+                                        <td>{{ delete_user.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>الاسم الكامل:</strong></td>
+                                        <td>{{ delete_user.get_full_name|default:"غير محدد" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>البريد الإلكتروني:</strong></td>
+                                        <td>{{ delete_user.email|default:"غير محدد" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>الدور:</strong></td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if delete_user.profile.role == 'admin' %}bg-danger
+                                                {% elif delete_user.profile.role == 'manager' %}bg-warning
+                                                {% elif delete_user.profile.role == 'employee' %}bg-info
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ delete_user.profile.get_role_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>تاريخ التسجيل:</strong></td>
+                                        <td>{{ delete_user.date_joined|date:"Y-m-d H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>آخر تسجيل دخول:</strong></td>
+                                        <td>{{ delete_user.last_login|date:"Y-m-d H:i"|default:"لم يسجل دخول بعد" }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="danger-zone">
+                        <h5 class="text-danger mb-3">
+                            <i class="fas fa-skull-crossbones"></i> منطقة الخطر
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <h6>البيانات التي سيتم حذفها:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-danger"></i> معلومات الحساب والملف الشخصي</li>
+                                <li><i class="fas fa-check text-danger"></i> جميع الإشعارات المرسلة والمستلمة</li>
+                                <li><i class="fas fa-check text-danger"></i> سجل النشاطات والعمليات</li>
+                                <li><i class="fas fa-check text-danger"></i> الصورة الشخصية والملفات المرفقة</li>
+                                <li><i class="fas fa-check text-danger"></i> جميع الصلاحيات والأدوار المعينة</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-danger">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>ملاحظة مهمة:</strong> 
+                            قد تحتاج إلى إعادة تعيين العمليات والسجلات المرتبطة بهذا المستخدم إلى مستخدم آخر قبل الحذف.
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Form -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    أؤكد أنني أفهم أن هذا الإجراء غير قابل للاسترداد وأريد حذف المستخدم <strong>{{ delete_user.username }}</strong> نهائياً
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> إلغاء والعودة
+                            </a>
+                            
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-trash"></i> حذف المستخدم نهائياً
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Enable/disable delete button based on confirmation checkbox
+    $('#confirmDelete').change(function() {
+        $('#deleteBtn').prop('disabled', !this.checked);
+    });
+
+    // Add extra confirmation on form submit
+    $('#deleteForm').submit(function(e) {
+        if (!confirm('هل أنت متأكد تماماً من حذف المستخدم {{ delete_user.username }}؟\n\nهذا الإجراء لا يمكن التراجع عنه!')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading state
+        $('#deleteBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحذف...');
+    });
+});
+</script>
+{% endblock %}

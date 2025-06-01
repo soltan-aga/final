@@ -1,0 +1,148 @@
+{% extends 'base/base.html' %}
+{% load permission_tags %}
+
+{% block title %}اختبار الصلاحيات{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3>اختبار نظام الصلاحيات</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>معلومات المستخدم الحالي:</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>اسم المستخدم:</strong></td>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>الدور:</strong></td>
+                            <td>
+                                <span class="badge 
+                                    {% if user.profile.role == 'admin' %}bg-danger
+                                    {% elif user.profile.role == 'manager' %}bg-warning
+                                    {% elif user.profile.role == 'employee' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ user.profile.get_role_display_name }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5>اختبار الصلاحيات:</h5>
+                    <div class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            إنشاء شركة
+                            {% if user|has_permission:"create_company" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            تعديل شركة
+                            {% if user|has_permission:"edit_company" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            حذف شركة
+                            {% if user|has_permission:"delete_company" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            عرض الشركات
+                            {% if user|has_permission:"view_companies" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            إنشاء منتج
+                            {% if user|has_permission:"create_product" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            إنشاء فاتورة
+                            {% if user|has_permission:"create_invoice" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            إدارة المستخدمين
+                            {% if user|has_permission:"view_users" %}
+                                <span class="badge bg-success">✓ مسموح</span>
+                            {% else %}
+                                <span class="badge bg-danger">✗ غير مسموح</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5>اختبار الروابط:</h5>
+                    <div class="btn-group-vertical w-100">
+                        {% if user|has_permission:"create_company" %}
+                        <a href="{% url 'company_add' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> إنشاء شركة جديدة (مسموح)
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-ban"></i> إنشاء شركة جديدة (غير مسموح)
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'company_list' %}" class="btn btn-outline-info">
+                            <i class="fas fa-list"></i> عرض قائمة الشركات
+                        </a>
+                        
+                        {% if user|has_permission:"view_users" %}
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-users"></i> إدارة المستخدمين (مسموح)
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-ban"></i> إدارة المستخدمين (غير مسموح)
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <h6><i class="fas fa-info-circle"></i> ملاحظة:</h6>
+                <p class="mb-0">
+                    هذه الصفحة لاختبار نظام الصلاحيات. إذا كان المستخدم بدور "مشاهد" فيجب أن يرى "غير مسموح" 
+                    لمعظم العمليات ما عدا العرض. إذا كان بدور "admin" فيجب أن يرى "مسموح" لجميع العمليات.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

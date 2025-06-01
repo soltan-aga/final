@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+
+{% block title %}معلومات المستخدم للتحقق{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3>معلومات المستخدم للتحقق</h3>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <tr>
+                    <td><strong>اسم المستخدم:</strong></td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td><strong>مصادق:</strong></td>
+                    <td>{{ user.is_authenticated }}</td>
+                </tr>
+                <tr>
+                    <td><strong>لديه profile:</strong></td>
+                    <td>{{ has_profile }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Profile object:</strong></td>
+                    <td>{{ profile }}</td>
+                </tr>
+                <tr>
+                    <td><strong>الدور:</strong></td>
+                    <td>{{ role }}</td>
+                </tr>
+                <tr>
+                    <td><strong>شرط القائمة:</strong></td>
+                    <td>
+                        {% if user.is_authenticated and user.profile %}
+                            {% if user.profile.role == 'admin' or user.profile.role == 'manager' %}
+                                ✅ يجب أن تظهر قائمة إدارة النظام
+                            {% else %}
+                                ❌ لا يجب أن تظهر قائمة إدارة النظام (الدور: {{ user.profile.role }})
+                            {% endif %}
+                        {% else %}
+                            ❌ لا يجب أن تظهر قائمة إدارة النظام (غير مصادق أو لا يوجد profile)
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

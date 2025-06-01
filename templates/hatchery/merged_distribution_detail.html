@@ -1,0 +1,159 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}تفاصيل التوزيع المدمج{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-layer-group"></i>
+                        تفاصيل التوزيع المدمج
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'hatchery:merged_distribution_update' distribution.pk %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i>
+                            تعديل
+                        </a>
+                        <a href="{% url 'hatchery:distribution_list' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i>
+                            العودة إلى قائمة التوزيعات
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-layer-group"></i>
+                        <strong>توزيع مدمج:</strong> هذا التوزيع يحتوي على كتاكيت من {{ merged_items.count }} دفعة/دفعات مختلفة.
+                    </div>
+
+                    <!-- معلومات التوزيع الأساسية -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tbody>
+                                        <tr>
+                                            <th>تاريخ التوزيع</th>
+                                            <td>{{ distribution.distribution_date }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>إجمالي الكتاكيت المتاحة</th>
+                                            <td>{{ distribution.total_available_chicks }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>إجمالي الكتاكيت الموزعة</th>
+                                            <td>{{ distribution.total_distributed_count }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>الكتاكيت المتبقية</th>
+                                            <td>{{ distribution.remaining_chicks }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>إجمالي المبلغ المدفوع</th>
+                                            <td>{{ distribution.total_paid_amount }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>ملاحظات</th>
+                                            <td>{{ distribution.notes|default:"-" }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الدفعات المدمجة -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-boxes"></i> الدفعات المدمجة</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>اسم الدفعة</th>
+                                        <th>تاريخ الخروج</th>
+                                        <th>إجمالي الكتاكيت</th>
+                                        <th>الكتاكيت المستخدمة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in merged_items %}
+                                    <tr>
+                                        <td>{{ item.hatching.incubation.batch_entry.batch_name.name }}</td>
+                                        <td>{{ item.hatching.hatch_date }}</td>
+                                        <td>{{ item.hatching.chicks_count }}</td>
+                                        <td>{{ item.chicks_count_from_batch }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">لا توجد دفعات مدمجة</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- عناصر التوزيع -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-users"></i> عناصر التوزيع</h5>
+                        {% if distribution_items %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>العميل</th>
+                                            <th>اسم السائق</th>
+                                            <th>عدد الكتاكيت</th>
+                                            <th>السعر للوحدة</th>
+                                            <th>الإجمالي</th>
+                                            <th>المدفوع</th>
+                                            <th>المتبقي</th>
+                                            <th>ملاحظات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in distribution_items %}
+                                        <tr>
+                                            <td>{{ item.customer.name }}</td>
+                                            <td>{{ item.driver|default:"-" }}</td>
+                                            <td>{{ item.chicks_count }}</td>
+                                            <td>{{ item.price_per_unit }}</td>
+                                            <td>{{ item.total_amount }}</td>
+                                            <td>{{ item.paid_amount }}</td>
+                                            <td>{{ item.remaining_amount }}</td>
+                                            <td>{{ item.notes|default:"-"|truncatechars:30 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr class="table-primary">
+                                            <th>الإجمالي</th>
+                                            <th>-</th>
+                                            <th>{{ distribution.total_distributed_count }}</th>
+                                            <th>-</th>
+                                            <th>{{ total_amount }}</th>
+                                            <th>{{ distribution.total_paid_amount }}</th>
+                                            <th>{{ total_remaining }}</th>
+                                            <th>-</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                لم يتم إضافة أي عناصر توزيع بعد. 
+                                <a href="{% url 'hatchery:merged_distribution_update' distribution.pk %}" class="btn btn-sm btn-warning ms-2">
+                                    إضافة عناصر التوزيع
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
