@@ -106,16 +106,8 @@ WSGI_APPLICATION = "acc.wsgi.application"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'acc-db',
-        'USER': 'root',  # اسم المستخدم الجديد
-        'PASSWORD': 'giltmole',  # كلمة المرور الجديدة
-        'HOST': 'acc-db.c1a8c2ycw6z1.eu-north-1.rds.amazonaws.com',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
